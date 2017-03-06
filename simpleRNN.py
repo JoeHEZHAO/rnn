@@ -4,7 +4,8 @@ Data: 03/06/2017
 Description: simple RNN implementation 
 Followed the tutorial from original source 
 http://www.wildml.com/2015/09/recurrent-neural-networks-tutorial-part-2-implementing-a-language-model-rnn-with-python-numpy-and-theano/
-
+Each x is a sentence and y is the shifted version of the axis
+x starts with start_token and y ends with end_token
 '''
 import numpy as np
 
@@ -35,7 +36,7 @@ class SRNN:
     '''
     def fp(self,x):
         # total number of time steps
-        T = len(x)
+        T = len(x) # length of the sentence is the time steps
 
         # save all the previous states since we need it for the computation
         s = np.zeros((T+1,self.hidden_dim))
@@ -50,7 +51,7 @@ class SRNN:
         
         return [o,s]
     
-    SRNN.fp = fp
+    #self.fp = fp
 
     '''
     Prediction
@@ -59,7 +60,7 @@ class SRNN:
         o, s = self.fp(x)
         return np.argmax(o, axis=1) # returns the index of maximum apply accross the column
 
-    SRNN.predict = predict
+    #SRNN.predict = predict
 
     '''
     Total of the loss for the given samples
@@ -82,8 +83,8 @@ class SRNN:
         N = np.sum((len(y_i) for y_i in y))
         return self.calculate_sum_loss(x,y)/N
     
-    SRNN.calculate_sum_loss = calculate_sum_loss
-    SRNN.calculate_loss = calculate_loss
+    #SRNN.calculate_sum_loss = calculate_sum_loss
+    #SRNN.calculate_loss = calculate_loss
 
     '''
     Do the mathematics for the back-propagation should be straight forward
@@ -109,7 +110,7 @@ class SRNN:
                 delta_t =  self.W.T.dot(delta_t) * (1 - s[bptt_step - 1] ** 2)
         return [dLdU, dLdV, dLdW]
     
-    SRNN.bptt = bptt
+    #SRNN.bptt = bptt
 
     '''
     Dig into what is going on in the gradient_check
@@ -156,6 +157,6 @@ class SRNN:
 
             print ("Gradient check for parameter %s passed." % (pname))
  
-    SRNN.gradient_check = gradient_check
+    #SRNN.gradient_check = gradient_check
 
 

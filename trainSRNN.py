@@ -7,6 +7,9 @@ import csv
 import itertools
 import nltk
 import numpy as np
+import simpleRNN as srnn
+
+#nltk.download('book')
 
 vocabulary_size = 8000
 unknown_token = "UNKNOWN_TOKEN"  # for all the words that are not in the vocabulary
@@ -37,13 +40,15 @@ word_to_index = dict([(w, i) for i, w in enumerate(index_to_word)])
 
 print("Using vocabulary size %d." % vocabulary_size)
 print("The least frequent word in our vocabulary is '%s' and appeared %d times." %
-      (vocab[-1][0], vocab[-1][1]))
+      (vocab[-1][0], vocab[-1][1])) #last element in vocab
 
 for i, sent in enumerate(tokenized_sentences):
     tokenized_sentences[i] = [
         w if w in word_to_index else unknown_token for w in sent]
 
-X_train = np.asarray([[word_to_index[w] for w in sent[:-1]]
-                      for sent in tokenized_sentences])
-y_train = np.asarray([[word_to_index[w] for w in sent[:-1]]
-                      for sent in tokenized_sentences])
+X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] 
+                      for sent in tokenized_sentences])# sent[:-1] all other than last because last is end token
+y_train = np.asarray([[word_to_index[w] for w in sent[1:]]
+                      for sent in tokenized_sentences])# sent[1:] remove start token for the label
+
+model = srnn(vocabulary_size, hidden_dim = 100)
