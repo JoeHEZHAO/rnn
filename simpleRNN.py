@@ -4,8 +4,11 @@ Data: 03/06/2017
 Description: simple RNN implementation 
 Followed the tutorial from original source 
 http://www.wildml.com/2015/09/recurrent-neural-networks-tutorial-part-2-implementing-a-language-model-rnn-with-python-numpy-and-theano/
+
 '''
 import numpy as np
+
+#TODO::Description of all the input and out expected should be defined for the functions
 
 class SRNN:
     '''
@@ -82,6 +85,9 @@ class SRNN:
     SRNN.calculate_sum_loss = calculate_sum_loss
     SRNN.calculate_loss = calculate_loss
 
+    '''
+    Do the mathematics for the back-propagation should be straight forward
+    '''
     def bptt(self, x, y):
         T = len(y)
         o, s = self.fp(x)
@@ -105,7 +111,10 @@ class SRNN:
     
     SRNN.bptt = bptt
 
-
+    '''
+    Dig into what is going on in the gradient_check
+    This is important
+    '''
     def gradient_check(self, x, y, h=0.001, error_threshold = 0.01):
         # Calculate the gradients using backpropagation. We want to checker if these are correct.
         bptt_gradients = self.bptt(x, y)
@@ -115,7 +124,7 @@ class SRNN:
         for pidx, pname in enumerate(model_parameters):
             # Get the actual parameter value from the mode, e.g. model.W
             parameter = operator.attrgetter(pname)(self)
-            print "Performing gradient check for parameter %s with size %d." % (pname, np.prod(parameter.shape))
+            print("Performing gradient check for parameter %s with size %d." % (pname, np.prod(parameter.shape)))
             # Iterate over each element of the parameter matrix, e.g. (0,0), (0,1), ...
             it = np.nditer(parameter, flags=['multi_index'], op_flags=['readwrite'])
             while not it.finished:
@@ -136,17 +145,17 @@ class SRNN:
                 relative_error = np.abs(backprop_gradient - estimated_gradient)/(np.abs(backprop_gradient) + np.abs(estimated_gradient))
                 # If the error is to large fail the gradient check
                 if relative_error > error_threshold:
-                    print "Gradient Check ERROR: parameter=%s ix=%s" % (pname, ix)
-                    print "+h Loss: %f" % gradplus
-                    print "-h Loss: %f" % gradminus
-                    print "Estimated_gradient: %f" % estimated_gradient
-                    print "Backpropagation gradient: %f" % backprop_gradient
-                    print "Relative Error: %f" % relative_error
+                    print("Gradient Check ERROR: parameter=%s ix=%s" % (pname, ix))
+                    print ("+h Loss: %f" % gradplus)
+                    print ("-h Loss: %f" % gradminus)
+                    print ("Estimated_gradient: %f" % estimated_gradient)
+                    print ("Backpropagation gradient: %f" % backprop_gradient)
+                    print ("Relative Error: %f" % relative_error)
                     return
                 it.iternext()
 
-            print "Gradient check for parameter %s passed." % (pname)
+            print ("Gradient check for parameter %s passed." % (pname))
  
-RNNNumpy.gradient_check = gradient_check
+    SRNN.gradient_check = gradient_check
 
 
