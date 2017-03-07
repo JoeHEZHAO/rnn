@@ -8,10 +8,39 @@ import itertools
 import nltk
 import numpy as np
 import simpleRNN as srnn
+import os
+import utils
+
+_VOCABULARY_SIZE = int(os.environ.get('VOCABULARY_SIZE', '8000'))
+_HIDDEN_DIM = int(os.environ.get('HIDDEN_DIM', '80'))
+_LEARNING_RATE = float(os.environ.get('LEARNING_RATE', '0.005'))
+_NEPOCH = int(os.environ.get('NEPOCH', '100'))
+_MODEL_FILE = os.environ.get('MODEL_FILE')
 
 #nltk.download('book')
 
-vocabulary_size = 8000
+def train_rnn_sgd(model, X_train, y_train, learning_rate=0.05, nepoch=5, evaluate_loss_after=5):
+    losses = []
+    num_examples_seen = 0
+    for epoch in np.arange(nepoch):
+        if(epoch % evaluate_loss_after == 0):
+            loss = model.calculate_loss(X_train, y_train)
+            losses.append((num_examples_seen, loss))
+            time =  datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            print("%s: Loss after num_examples_seen=%d epoch=%d: %f" % (time, num_examples_seen, epoch, loss))
+            if (len(losses) > 1 and losses[-1][1] > losses[-2][1]):
+                learning_rate = learning_rate * 0.5
+                print("Setting learning rate to %f" % learning_rate)
+            sys.stdout.flush()
+
+            # ADDED! Saving model oarameters
+            save_model_parameters_theano("./data/srnn-%d-%d-%s.npz" % (model.hidden_dim, model.word_dim, time), model)
+
+        for i in range(len(y_train)):
+            model.sgd_step(X_train[i], y_train[i], learning_rate)
+            num_examples_seen += 1
+
+vocabulary_size = _VOCABULARY_SIZE
 unknown_token = "UNKNOWN_TOKEN"  # for all the words that are not in the vocabulary
 start_token = "SENTENCE_START"
 end_token = "SENTENCE_END"
@@ -20,7 +49,11 @@ print("Reading the redit comment csv file")
 
 with open('data/redit_comment.csv', 'r') as f:
     reader = csv.reader(f, skipinitialspace=True)
-    reader.__next__()
+    try:
+        reader.next()
+    except:
+        reader.__next__()
+
 
     sentences = itertools.chain(*[nltk.sent_tokenize(x[0].lower()) for x in reader])
 
@@ -52,3 +85,13 @@ y_train = np.asarray([[word_to_index[w] for w in sent[1:]]
                       for sent in tokenized_sentences])# sent[1:] remove start token for the label
 
 model = srnn(vocabulary_size, hidden_dim = 100)
+t1 = time.time()
+model.sgd_step(X_train[10], y_train[10], _LEARNING_RATE)
+t2 = time.time()
+
+print("SGD Step time: %f milliseconds" % ((t2 - t1) * 1000.))
+
+if _MODEL_FILE != None:
+    load_model_parameters_theano(_MODEL_FILE, model)
+
+train_rnn_sgd(model, X_train, y_train, nepoch=_NEPOCH, learning_rate=_LEARNING_RATE)

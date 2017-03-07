@@ -8,6 +8,7 @@ Each x is a sentence and y is the shifted version of the axis
 x starts with start_token and y ends with end_token
 '''
 import numpy as np
+from utils import softmax
 
 #TODO::Description of all the input and out expected should be defined for the functions
 
@@ -45,6 +46,7 @@ class SRNN:
         # The outputs at each time step. Save them for later as well
         o = np.zeros((T, self.word_dim))
 
+        # for each time step. Each time step is a word
         for t in np.arange(T):
             s[t] = np.tanh(self.U[:,x[t]] +self.W.dot(s[t-1]))
             o[t] = softmax(self.V.dot(s[t]))
@@ -98,13 +100,13 @@ class SRNN:
         dLdW = np.zeros(self.W.shape)
         dLdV = np.zeros(self.V.shape)
 
-        delta_o[np.arrange(len(y)), y]  -= 1
+        delta_o[np.arange(len(y)), y]  -= 1
 
         for t in np.arange(T) [::-1]:
             dLdV += np.outer(delta_o[t], s[t].T)
             delta_t =  self.V.T.dot(delta_o[t]) * (1 - (s[t] ** 2))
 
-            for bptt_step in np.arange(max(0, t-self.bptt_steps), t+1)[::-1]:
+            for bptt_step in np.arange(max(0, t-self.bptt_steps), t+1)[::-1]: # similar to for i in range(100, -1, -1)
                 dLdW += np.outer(delta_t, s[bptt_step - 1])
                 dLdU[:, x[bptt_step]] += delta_t
                 delta_t =  self.W.T.dot(delta_t) * (1 - s[bptt_step - 1] ** 2)
@@ -158,5 +160,18 @@ class SRNN:
             print ("Gradient check for parameter %s passed." % (pname))
  
     #SRNN.gradient_check = gradient_check
+
+    '''
+    Single stochastic gradient descent
+    '''
+    def sgd_step(self, x, y, learning_rate=0.1):
+        # get the gradients for the parameters
+        dLdU, dLdV, dLDw = self.bptt(x, y)
+
+        #update the parameters
+        self.U -= learning_rate * dLdU
+        self.V -= learning_rate * dLdV
+        self.W -= learning_rate * dLDw
+
 
 
