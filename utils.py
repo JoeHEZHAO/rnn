@@ -5,7 +5,7 @@ def softmax(x):
     return xs/np.sum(xs)
 
 def save_model_parameters_theano(outfile, model):
-    U, V, W = model.U.get_value(), model.V.get_value(), model.W.get_value()
+    U, V, W = model.U, model.V, model.W
     np.savez(outfile, U=U, V=V, W=W)
     print("Saved model parameters to %s." % outfile)
 
@@ -18,3 +18,13 @@ def load_model_parameters_theano(path, model):
     model.V.set_value(V)
     model.W.set_value(W)
     print("Loaded model parameters from %s. hidden_dim=%d word_dim=%d" % (path, U.shape[0], U.shape[1]))
+
+def save_train_data(outfile, X_train, y_train):
+    np.savez(outfile, X_train=X_train, y_train=y_train)
+    print("Saved train data to %s" % outfile)
+
+def load_train_data(path):
+    npzfile =  np.load(path)
+    X_train, y_train = npzfile["X_train"], npzfile["y_train"]
+    print("Loaded train data from %s" % path)
+    return X_train, y_train

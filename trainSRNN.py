@@ -7,9 +7,12 @@ import csv
 import itertools
 import nltk
 import numpy as np
-import simpleRNN as srnn
+from simpleRNN import SRNN as srnn
 import os
-import utils
+import time
+import datetime
+import sys
+from utils import *
 
 _VOCABULARY_SIZE = int(os.environ.get('VOCABULARY_SIZE', '8000'))
 _HIDDEN_DIM = int(os.environ.get('HIDDEN_DIM', '80'))
@@ -26,7 +29,7 @@ def train_rnn_sgd(model, X_train, y_train, learning_rate=0.05, nepoch=5, evaluat
         if(epoch % evaluate_loss_after == 0):
             loss = model.calculate_loss(X_train, y_train)
             losses.append((num_examples_seen, loss))
-            time =  datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             print("%s: Loss after num_examples_seen=%d epoch=%d: %f" % (time, num_examples_seen, epoch, loss))
             if (len(losses) > 1 and losses[-1][1] > losses[-2][1]):
                 learning_rate = learning_rate * 0.5
@@ -38,6 +41,7 @@ def train_rnn_sgd(model, X_train, y_train, learning_rate=0.05, nepoch=5, evaluat
 
         for i in range(len(y_train)):
             model.sgd_step(X_train[i], y_train[i], learning_rate)
+            print("Training on the %d-th sentence and %d examples seen" % (i,num_examples_seen+1))
             num_examples_seen += 1
 
 vocabulary_size = _VOCABULARY_SIZE
@@ -47,45 +51,52 @@ end_token = "SENTENCE_END"
 
 print("Reading the redit comment csv file")
 
-#with open('data/redit_comment.csv', 'r') as f:
-with open('data/redit_comment.csv', 'rb') as f:
-    reader = csv.reader(f, skipinitialspace=True)
-    try:
-        reader.next()
-    except:
-        reader.__next__()
+train_data_file="./data/srnn-train-processed.npz"
 
-    # use this for python 3.0
-    #sentences = itertools.chain(*[nltk.sent_tokenize(x[0].lower()) for x in reader])
-    sentences = itertools.chain(*[nltk.sent_tokenize(x[0].decode('utf-8').lower()) for x in reader])
+if (not os.path.isfile(train_data_file)):
+    #with open('data/redit_comment.csv', 'r') as f:
+    with open('data/redit_comment.csv', 'rb') as f:
+        reader = csv.reader(f, skipinitialspace=True)
+        try:
+            reader.next()
+        except:
+            reader.__next__()
+
+        # use this for python 3.0
+        #sentences = itertools.chain(*[nltk.sent_tokenize(x[0].lower()) for x in reader])
+        sentences = itertools.chain(*[nltk.sent_tokenize(x[0].decode('utf-8').lower()) for x in reader])
+        
+
+        sentences = ["%s %s %s" % (start_token, x, end_token) for x in sentences]
+
+    print("Parsed %d sentences." % (len(sentences)))
+
+    tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
+
+    word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
+    print("Found %d unique words tokens." % len(word_freq.items()))
+
+    vocab = word_freq.most_common(vocabulary_size - 1)
+    index_to_word = [x[0] for x in vocab]
+    index_to_word.append(unknown_token)
+    word_to_index = dict([(w, i) for i, w in enumerate(index_to_word)])
+
+    print("Using vocabulary size %d." % vocabulary_size)
+    print("The least frequent word in our vocabulary is '%s' and appeared %d times." %
+        (vocab[-1][0], vocab[-1][1])) #last element in vocab
+
+    for i, sent in enumerate(tokenized_sentences):
+        tokenized_sentences[i] = [
+            w if w in word_to_index else unknown_token for w in sent]
+
+    X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] 
+                        for sent in tokenized_sentences])# sent[:-1] all other than last because last is end token
+    y_train = np.asarray([[word_to_index[w] for w in sent[1:]]
+                        for sent in tokenized_sentences])# sent[1:] remove start token for the label
     
-
-    sentences = ["%s %s %s" % (start_token, x, end_token) for x in sentences]
-
-print("Parsed %d sentences." % (len(sentences)))
-
-tokenized_sentences = [nltk.word_tokenize(sent) for sent in sentences]
-
-word_freq = nltk.FreqDist(itertools.chain(*tokenized_sentences))
-print("Found %d unique words tokens." % len(word_freq.items()))
-
-vocab = word_freq.most_common(vocabulary_size - 1)
-index_to_word = [x[0] for x in vocab]
-index_to_word.append(unknown_token)
-word_to_index = dict([(w, i) for i, w in enumerate(index_to_word)])
-
-print("Using vocabulary size %d." % vocabulary_size)
-print("The least frequent word in our vocabulary is '%s' and appeared %d times." %
-      (vocab[-1][0], vocab[-1][1])) #last element in vocab
-
-for i, sent in enumerate(tokenized_sentences):
-    tokenized_sentences[i] = [
-        w if w in word_to_index else unknown_token for w in sent]
-
-X_train = np.asarray([[word_to_index[w] for w in sent[:-1]] 
-                      for sent in tokenized_sentences])# sent[:-1] all other than last because last is end token
-y_train = np.asarray([[word_to_index[w] for w in sent[1:]]
-                      for sent in tokenized_sentences])# sent[1:] remove start token for the label
+    save_train_data(train_data_file, X_train, y_train)
+else:
+    X_train, y_train = load_train_data(train_data_file)    
 
 model = srnn(vocabulary_size, hidden_dim = 100)
 t1 = time.time()

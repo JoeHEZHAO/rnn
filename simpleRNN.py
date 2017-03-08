@@ -99,7 +99,7 @@ class SRNN:
         dLdU = np.zeros(self.U.shape)
         dLdW = np.zeros(self.W.shape)
         dLdV = np.zeros(self.V.shape)
-
+        delta_o = o
         delta_o[np.arange(len(y)), y]  -= 1
 
         for t in np.arange(T) [::-1]:
