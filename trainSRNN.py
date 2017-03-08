@@ -47,15 +47,18 @@ end_token = "SENTENCE_END"
 
 print("Reading the redit comment csv file")
 
-with open('data/redit_comment.csv', 'r') as f:
+#with open('data/redit_comment.csv', 'r') as f:
+with open('data/redit_comment.csv', 'rb') as f:
     reader = csv.reader(f, skipinitialspace=True)
     try:
         reader.next()
     except:
         reader.__next__()
 
-
-    sentences = itertools.chain(*[nltk.sent_tokenize(x[0].lower()) for x in reader])
+    # use this for python 3.0
+    #sentences = itertools.chain(*[nltk.sent_tokenize(x[0].lower()) for x in reader])
+    sentences = itertools.chain(*[nltk.sent_tokenize(x[0].decode('utf-8').lower()) for x in reader])
+    
 
     sentences = ["%s %s %s" % (start_token, x, end_token) for x in sentences]
 
