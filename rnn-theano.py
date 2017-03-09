@@ -34,8 +34,6 @@ class SRNN:
     
     '''
     Forward propagation
-    x : sentence with each word considered as a time step
-    TODO: consider updating for batch
     '''
     def fp(self,x):
         # total number of time steps
@@ -75,14 +73,13 @@ class SRNN:
         # loop through each of the sentences
         for i in np.arange(len(y)): # check the dimension for x and y
             o, s = self.fp(x[i])
-            correct_word_predictions =  o[np.arange(len(y[i])), y[i]] # probability of each predicted word
+            correct_word_predictions =  o[np.arange(len(y[i])), y[i]] # not sure what this line does
             # Add the loss
             L+=-1 * np.sum(np.log(correct_word_predictions))
 
         return L
     '''
     Compute the normalized loss
-    N here is the total words/time steps for a sentence
     '''
     def calculate_loss(self, x, y):
         N = np.sum((len(y_i) for y_i in y))
