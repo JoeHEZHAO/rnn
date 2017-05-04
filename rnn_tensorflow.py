@@ -1,19 +1,18 @@
 '''
 Author: Manish Sapkota
-Data: 03/06/2017
-Description: simple RNN implementation
-Followed the tutorial from original source
-http://www.wildml.com/2015/09/recurrent-neural-networks-tutorial-part-2-implementing-a-language-model-rnn-with-python-numpy-and-theano/
+Data: 05/02/2017
+Description: optimized RNN implementation with tensorflow
 Each x is a sentence and y is the shifted version of the axis
 x starts with start_token and y ends with end_token
 '''
 import numpy as np
+import tensorflow as tf
 from utils import softmax
 
 #TODO::Description of all the input and out expected should
 #be defined for the functions
 
-class SRNN:
+class TenRNN(object):
     '''
     This function will initialize our simple RNN and it learning parameters
     '''
@@ -29,10 +28,20 @@ class SRNN:
         # W - mapping from hidden to hidden across time
         # V - mapping from hidden to output
         # 1/sqrt(n) where n is number of previous layers
-        self.U = np.random.uniform(-np.sqrt(1./word_dim), np.sqrt(1./word_dim), (hidden_dim, word_dim))
-        self.W = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (hidden_dim, hidden_dim))
-        self.V = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (word_dim, hidden_dim))
-    
+        U = np.random.uniform(-np.sqrt(1./word_dim), np.sqrt(1./word_dim), (hidden_dim, word_dim))
+        W = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (hidden_dim, hidden_dim))
+        V = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (word_dim, hidden_dim))
+
+        self.U = tf.Variable(U, name="U", dtype=tf.float32)
+        self.W = tf.Variable(W, name="W", dtype=tf.float32)
+        self.V = tf.Variable(V, name="V", dtype=tf.float32)
+        
+    def __tensorflow_build__(self):
+        U, V, W = self.U, self.V, self.W
+        x = 
+
+        def step(st_1, xt):
+
     '''
     Forward propagation
     x : sentence with each word considered as a time step
@@ -56,8 +65,7 @@ class SRNN:
 
         return [o, s]
 
-    #self.fp = fp
-
+    
     '''
     Prediction
     '''
