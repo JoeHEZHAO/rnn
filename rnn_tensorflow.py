@@ -32,13 +32,14 @@ class TenRNN(object):
         W = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (hidden_dim, hidden_dim))
         V = np.random.uniform(-np.sqrt(1./hidden_dim), np.sqrt(1./hidden_dim), (word_dim, hidden_dim))
 
-        self.U = tf.Variable(U, name="U", dtype=tf.float32)
+        self.U = tf.Variable(U, name="U", dtype=tf.float32) 
         self.W = tf.Variable(W, name="W", dtype=tf.float32)
         self.V = tf.Variable(V, name="V", dtype=tf.float32)
         
+        self.
     def __tensorflow_build__(self):
         U, V, W = self.U, self.V, self.W
-        
+
         # inputs
         xs_ = tf.placeholder(shape=[None, None], 
                              dtype=tf.int32)
