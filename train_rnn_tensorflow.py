@@ -50,16 +50,25 @@ def train(sess,
     summary_op = tf.summary.merge_all()
     summary_writer = tf.summary.FileWriter(logdir=logdir, graph=sess.graph)
 
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
 
     step = 0
     for epoch in np.arange(num_epoch):
         for i in range(len(y_train)):
             #x_one_hot = tf.one_hot(X_train[i], num_classes)
+            #rnn_inputs = x_one_hot
+
             #rnn_inputs = tf.unstack(x_one_hot, axis=1)
+            #x_one_hot = tf.one_hot(y_train[i], num_classes)
+            #rnn_inputs = tf.unstack(x_one_hot, axis=1)
+            x = np.array(X_train[i])
+            y = np.array(y_train[i])
+
+            x = x.reshape(-1, 1)
+            y = x.reshape(-1, 1)
             loss_ema_, summary, _, _ = sess.run(
                 [loss_ema, summary_op, optimizer.optimize_op, update_loss_ema],
-                {model.inputs: X_train[i], model.targets: y_train[i]})
+                {model.inputs: x, model.targets: y})
             summary_writer.add_summary(summary, global_step=step)
             print('\rStep %d. Loss EMA: %.6f.' % (step + 1, loss_ema_))
 
@@ -119,7 +128,7 @@ if (not os.path.isfile(train_data_file)):
 else:
     X_train, y_train = load_train_data(train_data_file)
 
-model = TenRNN(vocabulary_size, hidden_dim=100)
+model = TenRNN(1, hidden_dim=100)
 optimizer = Optimizer(model.loss,
                       initial_learning_rate=_LEARNING_RATE,
                       num_steps_per_decay=15000,

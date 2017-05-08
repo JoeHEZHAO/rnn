@@ -42,7 +42,7 @@ class TenRNN(object):
                                       shape=[None, word_dim],
                                       name='inputs')
         self._targets = tf.placeholder(tf.int32,
-                                       shape=[None, ],
+                                       shape=[None, word_dim],
                                        name='targets')
 
         with tf.variable_scope('model'):
@@ -75,7 +75,8 @@ class TenRNN(object):
     def _compute_loss(self):
         ''' Compute cross entropy loss with softmax '''
         with tf.variable_scope('loss'):
-            loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.targets,
+            t = tf.reshape(self.targets, [-1])
+            loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=t,
                                                                                   logits=self.logits),
                                   name='loss')
             return loss
