@@ -7,7 +7,7 @@ https://nbviewer.jupyter.org/github/rdipietro/tensorflow-notebooks/blob/master/t
 '''
 import csv
 import itertools
-import nltk
+#import nltk
 import numpy as np
 from simpleRNN import SRNN as srnn
 import os
@@ -18,7 +18,7 @@ from utils import *
 import shutil
 from rnn_tensorflow import TenRNN
 from optimizer import Optimizer
-
+import tensorflow as tf
 
 
 _VOCABULARY_SIZE = int(os.environ.get('VOCABULARY_SIZE', '8000'))
@@ -28,33 +28,35 @@ _NEPOCH = int(os.environ.get('NEPOCH', '100'))
 _MODEL_FILE = os.environ.get('MODEL_FILE')
 
 # nltk.download('book')
-
 def train(sess,
           model,
           optimizer,
           X_train,
           y_train,
           num_epoch,
+          num_classes,
           logdir='./logdir'):
 
     if os.path.exists(logdir):
         shutil.rmtree(logdir)
 
-    tf.scalar_summary('loss', model.loss)
+    tf.summary.scalar('loss', model.loss)
 
     ema = tf.train.ExponentialMovingAverage(decay=0.99)
     update_loss_ema = ema.apply([model.loss])
     loss_ema = ema.average(model.loss)
-    tf.scalar_summary('loss_ema', loss_ema)
+    tf.summary.scalar('loss_ema', loss_ema)
 
-    summary_op = tf.merge_all_summaries()
-    summary_writer = tf.train.SummaryWriter(logdir=logdir, graph=sess.graph)
+    summary_op = tf.summary.merge_all()
+    summary_writer = tf.summary.FileWriter(logdir=logdir, graph=sess.graph)
 
     sess.run(tf.initialize_all_variables())
 
     step = 0
     for epoch in np.arange(num_epoch):
         for i in range(len(y_train)):
+            #x_one_hot = tf.one_hot(X_train[i], num_classes)
+            #rnn_inputs = tf.unstack(x_one_hot, axis=1)
             loss_ema_, summary, _, _ = sess.run(
                 [loss_ema, summary_op, optimizer.optimize_op, update_loss_ema],
                 {model.inputs: X_train[i], model.targets: y_train[i]})
@@ -129,9 +131,10 @@ t1 = time.time()
 train(sess,
       model,
       optimizer,
-      X_train[10],
-      y_train[10],
+      X_train,
+      y_train,
       1,
+      vocabulary_size,
       logdir='./logdir')
 t2 = time.time()
 
@@ -143,4 +146,5 @@ train(sess,
       X_train,
       y_train,
       10,
+      vocabulary_size,
       logdir='./logdir')

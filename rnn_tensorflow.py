@@ -23,7 +23,7 @@ class TenRNN(object):
         # Random initialization of the network parameters
         # Here wer are creating just three layered RNN
         # np.random.uniform(low,high,tuplesize)
-        # U - mapping from input to hidden
+        # U - mapping from input to hidden (x_t i.e. one word)
         # W - mapping from hidden to hidden across time
         # V - mapping from hidden to output
         # 1/sqrt(n) where n is number of previous layers
@@ -32,7 +32,7 @@ class TenRNN(object):
         W = np.random.uniform(-np.sqrt(1. / hidden_dim),
                               np.sqrt(1. / hidden_dim), (hidden_dim, hidden_dim))
         V = np.random.uniform(-np.sqrt(1. / hidden_dim),
-                              np.sqrt(1. / hidden_dim), (word_dim, hidden_dim))
+                              np.sqrt(1. / hidden_dim), (hidden_dim, word_dim))
 
         self.U = tf.Variable(U, name="U", dtype=tf.float32)
         self.W = tf.Variable(W, name="W", dtype=tf.float32)
@@ -41,7 +41,7 @@ class TenRNN(object):
         self._inputs = tf.placeholder(tf.float32,
                                       shape=[None, word_dim],
                                       name='inputs')
-        self._targets = tf.placeholder(tf.float32,
+        self._targets = tf.placeholder(tf.int32,
                                        shape=[None, ],
                                        name='targets')
 
@@ -50,13 +50,17 @@ class TenRNN(object):
             self._loss = self._compute_loss()
 
     def _vanilla_rnn_step(self, st_prev, xt):
-        return tf.matmul(st_prev, self.W) #+ tf.matmul(xt, self.U)
+        st_prev = tf.reshape(st_prev, [1, self.hidden_dim])
+        xt = tf.reshape(xt, [1, self.word_dim])
+        st = tf.matmul(st_prev, self.W)  + tf.matmul(xt, self.U)
+        st = tf.reshape(st, [self.hidden_dim], name='st')
+        return st
 
     def _compute_predictions(self):
         with tf.variable_scope('states'):
             init_states = tf.zeros([self.hidden_dim],
                                    name='initial_state')
-                        
+
             states = tf.scan(self._vanilla_rnn_step,
                              self.inputs,
                              initializer=init_states,
@@ -71,7 +75,7 @@ class TenRNN(object):
     def _compute_loss(self):
         ''' Compute cross entropy loss with softmax '''
         with tf.variable_scope('loss'):
-            loss = tf.reduce_mean(tf.nn.sparse_softmaxx_cross_entropy_with_logits(labels=self.argets,
+            loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=self.targets,
                                                                                   logits=self.logits),
                                   name='loss')
             return loss
